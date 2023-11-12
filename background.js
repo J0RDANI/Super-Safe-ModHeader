@@ -7,11 +7,7 @@ let storedHeaderValue;
 let currentHeaderName = '';
 let currentHeaderValue = '';
 
-// Function to run when the popup is opened
-function onPopupOpened() {
-    console.log('Popup opened! Run your function here.');
-    updateRule('PopUp', 'Opened')
-}
+let updateCallback = null;
 
 // Function to update the rule with a new header value
 function updateRule(headerName, headerValue) {
@@ -40,20 +36,21 @@ function updateRule(headerName, headerValue) {
             }
         ],
     });
-    chrome.declarativeNetRequest.getDynamicRules(
-        { },
-        (rules) => {
-            storedHeaderName = rules[0].action.requestHeaders[0].header
-            storedHeaderValue = rules[0].action.requestHeaders[0].value
-            console.log(storedHeaderValue);
-        }
-            );
+    
 }
 
 // Function to get the current rule values
 function getCurrentRuleValues() {
+    chrome.declarativeNetRequest.getDynamicRules(
+        { },
+        (rules) => {
+            storedHeaderName = rules[0].action.requestHeaders[0].header;
+            storedHeaderValue = rules[0].action.requestHeaders[0].value;        }
+            );
+
     return { headerName:storedHeaderName,
-             headerValue: storedHeaderValue};
+             headerValue:storedHeaderValue};
+    
 }
 
 // Listen for messages from the popup
@@ -61,9 +58,20 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateRule') {
         updateRule(request.headerName, request.headerValue);
         sendResponse({ message: 'Rule updated successfully' });
-    } else if (request.action === 'getCurrentRule') {
-        const currentRuleValues = getCurrentRuleValues();
-        sendResponse(currentRuleValues);
+
+        if(updateCallback) {
+            updateCallback();
+            updateCallback = null;
+        }
+        
+    } else if (request.action === 'waitForUpdate') {
+        updateCallback = function() {
+            sendResponse({ success: true});
+        }
+    }
+    else if (request.action === 'getCurrentRule') {
+        //var currentRuleValues = getCurrentRuleValues();
+        sendResponse(getCurrentRuleValues());
     }
 });
 
