@@ -1,7 +1,23 @@
 const MY_CUSTOM_RULE_ID = 1;
+// Stored Values
+let storedHeaderName;
+let storedHeaderValue;
+
+// Initialize with default values
+let currentHeaderName = '';
+let currentHeaderValue = '';
+
+// Function to run when the popup is opened
+function onPopupOpened() {
+    console.log('Popup opened! Run your function here.');
+    updateRule('PopUp', 'Opened')
+}
 
 // Function to update the rule with a new header value
 function updateRule(headerName, headerValue) {
+    currentHeaderName = headerName;
+    currentHeaderValue = headerValue;
+    
     chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: [MY_CUSTOM_RULE_ID],
         addRules: [
@@ -24,6 +40,20 @@ function updateRule(headerName, headerValue) {
             }
         ],
     });
+    chrome.declarativeNetRequest.getDynamicRules(
+        { },
+        (rules) => {
+            storedHeaderName = rules[0].action.requestHeaders[0].header
+            storedHeaderValue = rules[0].action.requestHeaders[0].value
+            console.log(storedHeaderValue);
+        }
+            );
+}
+
+// Function to get the current rule values
+function getCurrentRuleValues() {
+    return { headerName:storedHeaderName,
+             headerValue: storedHeaderValue};
 }
 
 // Listen for messages from the popup
@@ -31,6 +61,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateRule') {
         updateRule(request.headerName, request.headerValue);
         sendResponse({ message: 'Rule updated successfully' });
+    } else if (request.action === 'getCurrentRule') {
+        const currentRuleValues = getCurrentRuleValues();
+        sendResponse(currentRuleValues);
     }
 });
 
@@ -45,4 +78,4 @@ chrome.action.onClicked.addListener(function (tab) {
 });
 
 // Initial rule setup
-updateRule("my custom header name", "my custom header value");
+updateRule(currentHeaderName, currentHeaderValue);
