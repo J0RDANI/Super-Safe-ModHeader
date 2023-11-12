@@ -19,7 +19,7 @@ function updateRule(headerName, headerValue) {
                     ]
                 },
                 condition: {
-                    "resourceTypes": ["main_frame", "sub_frame"]
+                    "resourceTypes": ["main_frame", "sub_frame", "script", "stylesheet", "image", "font", "object", "xmlhttprequest", "ping", "csp_report", "media", "websocket", "other"]
                 },
             }
         ],
